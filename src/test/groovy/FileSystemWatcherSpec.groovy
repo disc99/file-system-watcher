@@ -51,7 +51,6 @@ class FileSystemWatcherSpec extends Specification {
 
 
         when:
-        println dir.path.toString()
         FileSystemWatcher.watch(dir.path.toString(), events)
                 .subscribeOn(Schedulers.io())
                 .subscribe(subscriber)
@@ -59,11 +58,18 @@ class FileSystemWatcherSpec extends Specification {
         def now = System.currentTimeMillis()
         new File("$dir/testFile$now").text = "test"
         Thread.sleep(10_000)
-        println subscriber.getOnNextEvents().size()
 
         then:
         subscriber.assertNoErrors()
         subscriber.assertValueCount(1)
+
+        when:
+        new File("$dir/testFile$now").text = "test"
+        Thread.sleep(10_000)
+
+        then:
+        subscriber.assertNoErrors()
+        subscriber.assertValueCount(2)
 
 
 //        CountDownLatch latch = new CountDownLatch(2);
