@@ -4,12 +4,19 @@ import lombok.Value;
 import rx.Observable;
 import rx.Subscriber;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.lang.reflect.Field;
 import java.nio.file.*;
+import java.util.Arrays;
+import java.util.List;
 
 
 public class FileSystemWatcher {
 
     public static Observable<FileSystemEvent> watch(String dir, WatchEvent.Kind<?>[] events) {
+        System.out.printf("[CALL WATCH] Start\n");
         return Observable.create(new FileSystemEventOnSubscribe(dir, events));
     }
 
@@ -20,15 +27,25 @@ public class FileSystemWatcher {
 
         @Override
         public void call(Subscriber<? super FileSystemEvent> subscriber) {
+            System.out.printf("[CALL]");
             FileSystem fileSystem = FileSystems.getDefault();
             try (WatchService watcher = fileSystem.newWatchService()) {
 
                 Path path = fileSystem.getPath(dir);
                 path.register(watcher, events);
 
+                System.out.printf("[REGISTER] Dir:%s Event:%s\n", dir, Arrays.toString(events));
+
                 while (true) {
+                    System.out.printf("[EVENT WAITING]\n");
                     WatchKey key = watcher.take();
-                    Observable.from(key.pollEvents()).forEach(event -> subscriber.onNext(new FileSystemEvent(event)));
+                    List<WatchEvent<?>> es = key.pollEvents();
+                    System.out.printf("[EVENT OCCURS] EventKind:%s\n", key);
+                    Observable.from(es).forEach(event -> {
+                        File file = path.resolve(dir + "/" + event.context()).toFile();
+                        System.out.printf("[EVENT DETAIL] Time:%d EventKind:%s File:%s\n", file.lastModified(), event.kind(), file.getName());
+                        subscriber.onNext(new FileSystemEvent(event));
+                    });
                     key.reset();
                 }
 
@@ -41,4 +58,5 @@ public class FileSystemWatcher {
         }
 
     }
+
 }
