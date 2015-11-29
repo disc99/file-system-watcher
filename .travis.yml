@@ -3,6 +3,7 @@ jdk:
 - oraclejdk8
 env:
 - TERM=dumb
-after_success:
-- ./gradlew assemble -x test
-
+install:
+- TERM=dumb ./gradlew assemble
+script:
+- TERM=dumb ./gradlew check
