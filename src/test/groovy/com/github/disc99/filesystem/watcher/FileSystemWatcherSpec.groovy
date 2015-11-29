@@ -63,7 +63,7 @@ class FileSystemWatcherSpec extends Specification {
         c1.await(10, SECONDS)
 
         then: "ファイル1の新規作成イベントが1件発生する"
-        subscriber.assertValueCount(3)
+        subscriber.assertValueCount(1)
 
 
         when: "ファイル1を更新したとき"
