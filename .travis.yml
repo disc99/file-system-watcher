@@ -4,5 +4,5 @@ jdk:
 env:
 - TERM=dumb
 after_success:
-- ./gradlew -debug
+- ./gradlew assemble -x test
 
