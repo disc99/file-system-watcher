@@ -16,7 +16,6 @@ import java.util.List;
 public class FileSystemWatcher {
 
     public static Observable<FileSystemEvent> watch(String dir, WatchEvent.Kind<?>[] events) {
-        System.out.printf("[CALL WATCH] Start\n");
         return Observable.create(new FileSystemEventOnSubscribe(dir, events));
     }
 
@@ -27,7 +26,6 @@ public class FileSystemWatcher {
 
         @Override
         public void call(Subscriber<? super FileSystemEvent> subscriber) {
-            System.out.printf("[CALL]");
             FileSystem fileSystem = FileSystems.getDefault();
             try (WatchService watcher = fileSystem.newWatchService()) {
 
@@ -40,7 +38,7 @@ public class FileSystemWatcher {
                     System.out.printf("[EVENT WAITING]\n");
                     WatchKey key = watcher.take();
                     List<WatchEvent<?>> es = key.pollEvents();
-                    System.out.printf("[EVENT OCCURS] EventKind:%s\n", key);
+                    System.out.printf("[EVENT OCCURS] Event count:%s\n", es.size());
                     Observable.from(es).forEach(event -> {
                         File file = path.resolve(dir + "/" + event.context()).toFile();
                         System.out.printf("[EVENT DETAIL] Time:%d EventKind:%s File:%s\n", file.lastModified(), event.kind(), file.getName());
@@ -51,9 +49,8 @@ public class FileSystemWatcher {
 
             } catch (Throwable e) {
                 subscriber.onError(e);
-            } finally {
-                subscriber.onCompleted();
             }
+            subscriber.onCompleted();
 
         }
 

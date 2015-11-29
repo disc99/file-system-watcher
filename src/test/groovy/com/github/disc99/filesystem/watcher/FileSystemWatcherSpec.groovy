@@ -7,7 +7,6 @@ import spock.lang.Specification
 import java.nio.file.StandardWatchEventKinds
 import java.nio.file.WatchEvent
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 import static java.util.concurrent.TimeUnit.SECONDS
 
@@ -56,30 +55,28 @@ class FileSystemWatcherSpec extends Specification {
                 .doOnNext({m5.countDown()})
                 .doOnNext({d1.countDown()})
                 .subscribe(subscriber)
-        Thread.sleep(100)
+        sleep(1000)
 
 
         when: "新規にファイル1を作成したとき"
         f1.text = "c1"
-        c1.await(5, SECONDS)
+        c1.await(10, SECONDS)
 
         then: "ファイル1の新規作成イベントが1件発生する"
-        subscriber.onNextEvents.size() == 1
+        subscriber.assertValueCount(3)
 
 
         when: "ファイル1を更新したとき"
         f1.text = "m1"
-        c1.await(5, SECONDS)
-        sleep(1000)
+        m1.await(10, SECONDS)
 
         then: "ファイル1の更新イベントが1件発生する"
-        subscriber.onNextEvents.size() == 2
+        subscriber.assertValueCount(2)
 
 
         when: "新規にファイル2を作成したとき"
         f2.text = "c2"
-        m1.await(5, SECONDS)
-        sleep(1000)
+        c2.await(10, SECONDS)
 
         then: "ファイル2の新規作成イベントが1件発生する"
         subscriber.assertValueCount(3)
@@ -87,8 +84,7 @@ class FileSystemWatcherSpec extends Specification {
 
         when: "ファイル1を更新したとき"
         f1.text = "m2"
-        m2.await(5, SECONDS)
-        sleep(1000)
+        m2.await(10, SECONDS)
 
         then: "ファイル1の更新イベントが1件発生する"
         subscriber.assertValueCount(4)
@@ -96,7 +92,7 @@ class FileSystemWatcherSpec extends Specification {
 
         when: "ファイル1を連続で更新したとき"
         f1.text = "m3"
-        m3.await(5, SECONDS)
+        m3.await(10, SECONDS)
 
         then: "ファイル1の更新イベントが1件発生する"
         subscriber.assertValueCount(5)
@@ -104,7 +100,7 @@ class FileSystemWatcherSpec extends Specification {
 
         when: "ファイル2を更新したとき"
         f2.text = "m4"
-        m4.await(5, SECONDS)
+        m4.await(10, SECONDS)
 
         then: "ファイル2の更新イベントが1件発生する"
         subscriber.assertValueCount(6)
@@ -112,7 +108,7 @@ class FileSystemWatcherSpec extends Specification {
 
         when: "ファイル1を削除したとき"
         f1.delete()
-        d1.await(5, SECONDS)
+        d1.await(10, SECONDS)
 
         then: "ファイル1の削除イベントが1件発生する"
         subscriber.assertValueCount(7)
@@ -120,7 +116,7 @@ class FileSystemWatcherSpec extends Specification {
 
         when: "ファイル2を更新したとき"
         f2.text = "m5"
-        m5.await(5, SECONDS)
+        m5.await(10, SECONDS)
 
         then: "ファイル2の更新イベントが1件発生する"
         subscriber.assertValueCount(8)
