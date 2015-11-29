@@ -46,6 +46,7 @@ class FileSystemWatcherSpec extends Specification {
 
         FileSystemWatcher.watch(testDirPath, events)
                 .subscribeOn(Schedulers.io())
+                .distinct({it.kind().toString() == "ENTRY_MODIFY" && f1.lastModified()})
                 .doOnNext({c1.countDown()})
                 .doOnNext({c2.countDown()})
                 .doOnNext({m1.countDown()})
@@ -60,65 +61,65 @@ class FileSystemWatcherSpec extends Specification {
 
         when: "新規にファイル1を作成したとき"
         f1.text = "c1"
-        c1.await(10, SECONDS)
 
         then: "ファイル1の新規作成イベントが1件発生する"
+        c1.await(10, SECONDS)
         subscriber.assertValueCount(1)
 
 
         when: "ファイル1を更新したとき"
         f1.text = "m1"
-        m1.await(10, SECONDS)
 
         then: "ファイル1の更新イベントが1件発生する"
+        m1.await(10, SECONDS)
         subscriber.assertValueCount(2)
 
 
         when: "新規にファイル2を作成したとき"
         f2.text = "c2"
-        c2.await(10, SECONDS)
 
         then: "ファイル2の新規作成イベントが1件発生する"
+        c2.await(10, SECONDS)
         subscriber.assertValueCount(3)
 
 
         when: "ファイル1を更新したとき"
         f1.text = "m2"
-        m2.await(10, SECONDS)
 
         then: "ファイル1の更新イベントが1件発生する"
+        m2.await(10, SECONDS)
         subscriber.assertValueCount(4)
 
 
         when: "ファイル1を連続で更新したとき"
         f1.text = "m3"
-        m3.await(10, SECONDS)
 
         then: "ファイル1の更新イベントが1件発生する"
+        m3.await(10, SECONDS)
         subscriber.assertValueCount(5)
 
 
         when: "ファイル2を更新したとき"
         f2.text = "m4"
-        m4.await(10, SECONDS)
 
         then: "ファイル2の更新イベントが1件発生する"
+        m4.await(10, SECONDS)
         subscriber.assertValueCount(6)
 
 
         when: "ファイル1を削除したとき"
         f1.delete()
-        d1.await(10, SECONDS)
 
         then: "ファイル1の削除イベントが1件発生する"
+        d1.await(10, SECONDS)
         subscriber.assertValueCount(7)
 
 
         when: "ファイル2を更新したとき"
         f2.text = "m5"
-        m5.await(10, SECONDS)
 
         then: "ファイル2の更新イベントが1件発生する"
+        m5.await(10, SECONDS)
         subscriber.assertValueCount(8)
     }
 }

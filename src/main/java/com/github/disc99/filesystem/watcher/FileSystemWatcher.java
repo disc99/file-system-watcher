@@ -12,7 +12,6 @@ import java.nio.file.*;
 import java.util.Arrays;
 import java.util.List;
 
-
 public class FileSystemWatcher {
 
     public static Observable<FileSystemEvent> watch(String dir, WatchEvent.Kind<?>[] events) {

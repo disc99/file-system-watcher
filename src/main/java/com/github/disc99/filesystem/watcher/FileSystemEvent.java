@@ -13,4 +13,7 @@ public class FileSystemEvent {
     public Path file() {
         return (Path) watchEvent.context();
     }
+    public WatchEvent.Kind<?> kind() {
+        return  watchEvent.kind();
+    }
 }
