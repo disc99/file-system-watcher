@@ -128,7 +128,7 @@ class FileSystemWatcherSpec extends Specification {
         then: "ファイル1の削除イベントが1件発生する"
         newEvents.collect({it.kind().toString()}).contains("ENTRY_DELETE")
 
-        
+
         when: "ファイル2を更新したとき"
         f2.text = "m5"
         waitSubscriber(m5)
