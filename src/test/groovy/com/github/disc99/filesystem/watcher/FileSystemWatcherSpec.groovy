@@ -4,6 +4,7 @@ import rx.observers.TestSubscriber
 import rx.schedulers.Schedulers
 import spock.lang.Specification
 
+import java.nio.file.Paths
 import java.nio.file.StandardWatchEventKinds
 import java.nio.file.WatchEvent
 import java.util.concurrent.CountDownLatch
@@ -44,9 +45,7 @@ class FileSystemWatcherSpec extends Specification {
         CountDownLatch d1 = new CountDownLatch(7)
         CountDownLatch m5 = new CountDownLatch(8)
 
-        FileSystemWatcher.watch(testDirPath, events)
-                .subscribeOn(Schedulers.io())
-                .distinct({it.kind().toString() == "ENTRY_MODIFY" && f1.lastModified()})
+        FileSystemWatcher.watch(Paths.get(testDirPath), events, Schedulers.io())
                 .doOnNext({c1.countDown()})
                 .doOnNext({c2.countDown()})
                 .doOnNext({m1.countDown()})
@@ -61,65 +60,70 @@ class FileSystemWatcherSpec extends Specification {
 
         when: "新規にファイル1を作成したとき"
         f1.text = "c1"
+        waitSubscriber(c1)
 
         then: "ファイル1の新規作成イベントが1件発生する"
-        c1.await(10, SECONDS)
         subscriber.assertValueCount(1)
 
 
         when: "ファイル1を更新したとき"
         f1.text = "m1"
+        waitSubscriber(m1)
 
         then: "ファイル1の更新イベントが1件発生する"
-        m1.await(10, SECONDS)
         subscriber.assertValueCount(2)
 
 
         when: "新規にファイル2を作成したとき"
         f2.text = "c2"
+        waitSubscriber(c2)
 
         then: "ファイル2の新規作成イベントが1件発生する"
-        c2.await(10, SECONDS)
         subscriber.assertValueCount(3)
 
 
         when: "ファイル1を更新したとき"
         f1.text = "m2"
+        waitSubscriber(m2)
 
         then: "ファイル1の更新イベントが1件発生する"
-        m2.await(10, SECONDS)
         subscriber.assertValueCount(4)
 
 
         when: "ファイル1を連続で更新したとき"
         f1.text = "m3"
+        waitSubscriber(m3)
 
         then: "ファイル1の更新イベントが1件発生する"
-        m3.await(10, SECONDS)
         subscriber.assertValueCount(5)
 
 
         when: "ファイル2を更新したとき"
         f2.text = "m4"
+        waitSubscriber(m4)
 
         then: "ファイル2の更新イベントが1件発生する"
-        m4.await(10, SECONDS)
         subscriber.assertValueCount(6)
 
 
         when: "ファイル1を削除したとき"
         f1.delete()
+        waitSubscriber(d1)
 
         then: "ファイル1の削除イベントが1件発生する"
-        d1.await(10, SECONDS)
         subscriber.assertValueCount(7)
 
 
         when: "ファイル2を更新したとき"
         f2.text = "m5"
+        waitSubscriber(m5)
 
         then: "ファイル2の更新イベントが1件発生する"
-        m5.await(10, SECONDS)
         subscriber.assertValueCount(8)
+    }
+
+    def waitSubscriber(CountDownLatch latch) {
+        latch.await(10, SECONDS)
+        sleep(500)
     }
 }

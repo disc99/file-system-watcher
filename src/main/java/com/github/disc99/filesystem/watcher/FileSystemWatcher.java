@@ -2,54 +2,48 @@ package com.github.disc99.filesystem.watcher;
 
 import lombok.Value;
 import rx.Observable;
+import rx.Scheduler;
 import rx.Subscriber;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.lang.reflect.Field;
 import java.nio.file.*;
-import java.util.Arrays;
 import java.util.List;
 
 public class FileSystemWatcher {
 
-    public static Observable<FileSystemEvent> watch(String dir, WatchEvent.Kind<?>[] events) {
-        return Observable.create(new FileSystemEventOnSubscribe(dir, events));
+    public static Observable<FileSystemEvent> watch(Path dir, WatchEvent.Kind<?>[] events, Scheduler scheduler) {
+        return Observable.create(new FileSystemEventOnSubscribe(dir, events, scheduler));
     }
 
     @Value
     static class FileSystemEventOnSubscribe implements Observable.OnSubscribe<FileSystemEvent> {
-        String dir;
+
+        Path dir;
         WatchEvent.Kind<?>[] events;
+        Scheduler scheduler;
 
+        @SuppressWarnings("unchecked")
         @Override
-        public void call(Subscriber<? super FileSystemEvent> subscriber) {
-            FileSystem fileSystem = FileSystems.getDefault();
-            try (WatchService watcher = fileSystem.newWatchService()) {
+        public void call(Subscriber<? super FileSystemEvent> s) {
+            Scheduler.Worker worker = scheduler.createWorker();
+            s.add(worker);
+            worker.schedule(() -> {
+                FileSystem fileSystem = FileSystems.getDefault();
+                try (WatchService watcher = fileSystem.newWatchService()) {
 
-                Path path = fileSystem.getPath(dir);
-                path.register(watcher, events);
+                    dir.register(watcher, events);
 
-                System.out.printf("[REGISTER] Dir:%s Event:%s\n", dir, Arrays.toString(events));
+                    while (true) {
+                        WatchKey key = watcher.take();
+                        List<WatchEvent<?>> es = key.pollEvents();
+                        Observable.from(es).forEach(event -> s.onNext(new FileSystemEvent((WatchEvent<Path>) event, dir)));
+                        key.reset();
+                    }
 
-                while (true) {
-                    System.out.printf("[EVENT WAITING]\n");
-                    WatchKey key = watcher.take();
-                    List<WatchEvent<?>> es = key.pollEvents();
-                    System.out.printf("[EVENT OCCURS] Event count:%s\n", es.size());
-                    Observable.from(es).forEach(event -> {
-                        File file = path.resolve(dir + "/" + event.context()).toFile();
-                        System.out.printf("[EVENT DETAIL] Time:%d EventKind:%s File:%s\n", file.lastModified(), event.kind(), file.getName());
-                        subscriber.onNext(new FileSystemEvent(event));
-                    });
-                    key.reset();
+                } catch (Throwable e) {
+                    s.onError(e);
                 }
-
-            } catch (Throwable e) {
-                subscriber.onError(e);
-            }
-            subscriber.onCompleted();
+                s.onCompleted();
+            });
 
         }
 
