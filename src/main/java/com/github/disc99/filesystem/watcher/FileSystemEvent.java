@@ -23,7 +23,7 @@ class FileSystemEvent {
         return file().lastModified();
     }
 
-    public WatchEvent.Kind<?> kind() {
+    public WatchEvent.Kind<Path> kind() {
         return watchEvent.kind();
     }
 

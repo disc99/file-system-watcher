@@ -56,74 +56,90 @@ class FileSystemWatcherSpec extends Specification {
                 .doOnNext({d1.countDown()})
                 .subscribe(subscriber)
         sleep(1000)
-
+        List<FileSystemEvent> newEvents = []
+        List<FileSystemEvent> lastEvents = []
 
         when: "新規にファイル1を作成したとき"
         f1.text = "c1"
         waitSubscriber(c1)
+        newEvents = subscriber.getOnNextEvents().collect() - lastEvents
+        lastEvents = subscriber.getOnNextEvents().collect()
 
         then: "ファイル1の新規作成イベントが1件発生する"
-        subscriber.assertValueCount(1)
+        newEvents.collect({it.kind().toString()}).contains("ENTRY_CREATE")
 
 
         when: "ファイル1を更新したとき"
         f1.text = "m1"
         waitSubscriber(m1)
+        newEvents = subscriber.getOnNextEvents().collect() - lastEvents
+        lastEvents = subscriber.getOnNextEvents().collect()
 
         then: "ファイル1の更新イベントが1件発生する"
-        subscriber.assertValueCount(2)
+        newEvents.collect({it.kind().toString()}).contains("ENTRY_MODIFY")
 
 
         when: "新規にファイル2を作成したとき"
         f2.text = "c2"
         waitSubscriber(c2)
+        newEvents = subscriber.getOnNextEvents().collect() - lastEvents
+        lastEvents = subscriber.getOnNextEvents().collect()
 
         then: "ファイル2の新規作成イベントが1件発生する"
-        subscriber.assertValueCount(3)
+        newEvents.collect({it.kind().toString()}).contains("ENTRY_CREATE")
 
 
         when: "ファイル1を更新したとき"
         f1.text = "m2"
         waitSubscriber(m2)
+        newEvents = subscriber.getOnNextEvents().collect() - lastEvents
+        lastEvents = subscriber.getOnNextEvents().collect()
 
         then: "ファイル1の更新イベントが1件発生する"
-        subscriber.assertValueCount(4)
+        newEvents.collect({it.kind().toString()}).contains("ENTRY_MODIFY")
 
 
         when: "ファイル1を連続で更新したとき"
         f1.text = "m3"
         waitSubscriber(m3)
+        newEvents = subscriber.getOnNextEvents().collect() - lastEvents
+        lastEvents = subscriber.getOnNextEvents().collect()
 
         then: "ファイル1の更新イベントが1件発生する"
-        subscriber.assertValueCount(5)
+        newEvents.collect({it.kind().toString()}).contains("ENTRY_MODIFY")
 
 
         when: "ファイル2を更新したとき"
         f2.text = "m4"
         waitSubscriber(m4)
+        newEvents = subscriber.getOnNextEvents().collect() - lastEvents
+        lastEvents = subscriber.getOnNextEvents().collect()
 
         then: "ファイル2の更新イベントが1件発生する"
-        subscriber.assertValueCount(6)
+        newEvents.collect({it.kind().toString()}).contains("ENTRY_MODIFY")
 
 
         when: "ファイル1を削除したとき"
         f1.delete()
         waitSubscriber(d1)
+        newEvents = subscriber.getOnNextEvents().collect() - lastEvents
+        lastEvents = subscriber.getOnNextEvents().collect()
 
         then: "ファイル1の削除イベントが1件発生する"
-        subscriber.assertValueCount(7)
+        newEvents.collect({it.kind().toString()}).contains("ENTRY_DELETE")
 
-
+        
         when: "ファイル2を更新したとき"
         f2.text = "m5"
         waitSubscriber(m5)
+        newEvents = subscriber.getOnNextEvents().collect() - lastEvents
 
         then: "ファイル2の更新イベントが1件発生する"
-        subscriber.assertValueCount(8)
+        newEvents.collect({it.kind().toString()}).contains("ENTRY_MODIFY")
     }
 
     def waitSubscriber(CountDownLatch latch) {
         latch.await(10, SECONDS)
-        sleep(500)
+        sleep(1000)
     }
 }
